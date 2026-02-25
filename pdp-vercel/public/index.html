@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDP Finder — Vercel Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Bebas+Neue&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050507;--s1:#0b0c10;--s2:#12131a;--b:#1e1f2b;--b2:#2a2b3d;
+  --g:#00e5a0;--g2:#00b8ff;--acc:#ff4d6d;--acc2:#ffd166;
+  --t:#e8eaf6;--m:#6b7099;--dim:#3d4063;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
+
+.hdr{padding:20px 28px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;background:rgba(5,5,7,.96);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--g)}
+.logo span{color:var(--m)}
+.hdr-stat{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--m)}
+.hdr-stat b{color:var(--g2)}
+
+.main{max-width:1600px;margin:0 auto;padding:24px 20px}
+
+.ctrl-bar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.btn{padding:10px 20px;border:none;border-radius:6px;font-family:'Barlow',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+.btn-primary{background:var(--g);color:#000}
+.btn-primary:hover:not(:disabled){background:#00ffb3;transform:translateY(-1px)}
+.btn-primary:disabled{background:var(--s2);color:var(--m);cursor:not-allowed;transform:none}
+.btn-outline{background:transparent;border:1px solid var(--b2);color:var(--m)}
+.btn-outline:hover:not(:disabled){border-color:var(--g);color:var(--g)}
+.btn-outline:disabled{opacity:.3;cursor:not-allowed}
+
+.chips{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.chip{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:5px 10px;border-radius:4px;border:1px solid var(--b)}
+.chip b{font-size:12px}
+
+/* PROXY STATUS BAR */
+.proxy-bar{background:var(--s1);border:1px solid var(--b);border-radius:8px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.proxy-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--m);text-transform:uppercase;letter-spacing:1px}
+.proxy-dots{display:flex;gap:6px;align-items:center}
+.px-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);transition:background .3s}
+.px-dot.ok{background:var(--g)}
+.px-dot.fail{background:var(--acc)}
+.px-dot.try{background:var(--acc2);animation:pulse .6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.px-name{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--m)}
+/* BRIGHT DATA PANEL */
+.bd-panel{background:var(--s1);border:1px solid var(--b);border-radius:10px;margin-bottom:16px;overflow:hidden}
+.bd-header{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;transition:background .15s}
+.bd-header:hover{background:var(--s2)}
+.bd-logo{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--g2)}
+.bd-status-pill{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:3px 8px;border-radius:20px;background:rgba(107,112,153,.15);color:var(--m);border:1px solid var(--b2)}
+.bd-status-pill.active{background:rgba(0,229,160,.12);color:var(--g);border-color:rgba(0,229,160,.3)}
+.bd-status-pill.error{background:rgba(255,77,109,.12);color:var(--acc);border-color:rgba(255,77,109,.3)}
+.bd-toggle{font-size:11px;color:var(--m);transition:transform .2s}
+.bd-toggle.open{transform:rotate(180deg)}
+.bd-body{padding:16px;border-top:1px solid var(--b);display:none}
+.bd-body.open{display:block}
+.bd-note{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--acc2);background:rgba(255,209,102,.06);border:1px solid rgba(255,209,102,.2);border-radius:5px;padding:8px 12px;margin-bottom:14px;line-height:1.7}
+.bd-fields{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.bd-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:150px}
+.bd-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--m);text-transform:uppercase;letter-spacing:1px}
+.bd-inp{padding:8px 10px;background:var(--s2);border:1px solid var(--b2);border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--t);width:100%}
+.bd-inp:focus{outline:none;border-color:var(--g)}
+.bd-inp option{background:var(--s2)}
+.bd-test-result{font-family:'IBM Plex Mono',monospace;font-size:10px}
+.bd-test-result.ok{color:var(--g)}.bd-test-result.err{color:var(--acc)}.bd-test-result.try{color:var(--acc2)}
+.bd-info{margin-top:14px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--dim);line-height:1.9;border-top:1px solid var(--b);padding-top:12px}
+.bd-info code{color:var(--g2);background:rgba(0,184,255,.08);padding:1px 5px;border-radius:3px}
+.bd-info b{color:var(--m)}
+
+
+/* TABLE */
+.tbl-wrap{background:var(--s1);border:1px solid var(--b);border-radius:10px;overflow:hidden}
+.tbl-head-bar{padding:12px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between}
+.tbl-title{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--m);text-transform:uppercase;letter-spacing:1.5px}
+
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead th{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--m);padding:10px 12px;text-align:left;border-bottom:1px solid var(--b);background:var(--s1);white-space:nowrap;overflow:hidden}
+tbody tr{border-bottom:1px solid rgba(30,31,43,.5);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover td{background:rgba(42,43,61,.35)}
+td{padding:0;vertical-align:top}
+
+.cell{padding:10px 12px}
+.cell-domain{font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell-domain .dsub{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--m);margin-top:2px;overflow:hidden;text-overflow:ellipsis}
+
+.url-cell{font-family:'IBM Plex Mono',monospace;font-size:9.5px;line-height:1.6}
+.url-cell a{color:var(--g2);text-decoration:none;word-break:break-all;display:block}
+.url-cell a:hover{color:var(--g)}
+.url-cell .none{color:var(--dim);font-style:italic;font-size:9px}
+.url-cell .finding{color:var(--acc2)}
+.finding-anim::after{content:'';animation:dots 1.2s steps(4,end) infinite}
+@keyframes dots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%{content:'...';}100%{content:'';}}
+
+.st{font-family:'IBM Plex Mono',monospace;font-size:8px;padding:3px 6px;border-radius:3px;display:inline-block;white-space:nowrap}
+.st-p{background:rgba(107,112,153,.12);color:var(--m)}
+.st-r{background:rgba(0,184,255,.1);color:var(--g2)}
+.st-d{background:rgba(0,229,160,.1);color:var(--g)}
+.st-e{background:rgba(255,77,109,.1);color:var(--acc)}
+.st-w{background:rgba(255,209,102,.1);color:var(--acc2)}
+
+.log-cell{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:var(--m);line-height:1.6;word-break:break-word}
+.log-cell .ls{color:var(--g)}.log-cell .le{color:var(--acc)}.log-cell .lw{color:var(--acc2)}
+
+.sp{display:inline-block;width:8px;height:8px;border:2px solid rgba(0,0,0,.15);border-top-color:#000;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* COL widths */
+col.c0{width:36px}col.c1{width:160px}col.c2{width:22%}col.c3{width:18%}col.c4{width:17%}col.c5{width:17%}col.c6{width:140px}col.c7{width:72px}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">PDP<span>·</span>FINDER <span style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--m)">VERCEL EDITION</span></div>
+  <div class="hdr-stat">DONE: <b id="hdr-done">0</b>/<b id="hdr-total">0</b> &nbsp;|&nbsp; PDPs: <b id="hdr-pdps">0</b> &nbsp;|&nbsp; SMs: <b id="hdr-sms">0</b></div>
+</div>
+
+<div class="main">
+
+  <div class="ctrl-bar">
+    <button class="btn btn-primary" id="btn-run" onclick="runAll()">⚡ RUN ALL DOMAINS</button>
+    <button class="btn btn-outline" id="btn-retry" onclick="retryFailed()" disabled>↺ RETRY FAILED</button>
+    <button class="btn btn-outline" id="btn-dl" onclick="dlExcel()" disabled>⬇ EXCEL</button>
+    <div class="chips">
+      <div class="chip"><b id="c-done" style="color:var(--g)">0</b> done</div>
+      <div class="chip"><b id="c-part" style="color:var(--acc2)">0</b> partial</div>
+      <div class="chip"><b id="c-run" style="color:var(--g2)">0</b> running</div>
+      <div class="chip"><b id="c-err" style="color:var(--acc)">0</b> failed</div>
+    </div>
+  </div>
+
+  <!-- Bright Data Credentials Panel -->
+  <div class="bd-panel" id="bd-panel">
+    <div class="bd-header" onclick="toggleBD()">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="bd-logo">🌐 Bright Data Proxy</div>
+        <div class="bd-status-pill" id="bd-pill">NOT CONFIGURED</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--m)" id="bd-mode-label">▼ Click to configure</span>
+      </div>
+    </div>
+    <div class="bd-body" id="bd-body">
+
+      <div class="bd-note" id="server-check-note">
+        🔍 Local server check kar raha hoon…
+      </div>
+
+      <div class="bd-fields">
+        <div class="bd-field">
+          <label class="bd-lbl">Proxy Host</label>
+          <input class="bd-inp" id="bd-host" placeholder="brd.superproxy.io" value="brd.superproxy.io">
+        </div>
+        <div class="bd-field" style="max-width:90px;flex:none">
+          <label class="bd-lbl">Port</label>
+          <input class="bd-inp" id="bd-port" placeholder="22225" value="22225">
+        </div>
+        <div class="bd-field">
+          <label class="bd-lbl">Username</label>
+          <input class="bd-inp" id="bd-user" placeholder="brd-customer-XXXXX-zone-XXXXX" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="bd-field">
+          <label class="bd-lbl">Password</label>
+          <input class="bd-inp" type="password" id="bd-pass" placeholder="••••••••••••" autocomplete="new-password">
+        </div>
+        <div class="bd-field" style="max-width:130px;flex:none">
+          <label class="bd-lbl">Zone Type</label>
+          <select class="bd-inp" id="bd-zone">
+            <option value="residential" selected>Residential</option>
+            <option value="datacenter">Datacenter</option>
+            <option value="isp">ISP</option>
+            <option value="mobile">Mobile</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
+        <button class="btn btn-primary" style="padding:8px 18px;font-size:13px" onclick="saveBD()">✓ Save & Connect</button>
+        <button class="btn btn-outline" style="padding:8px 14px;font-size:13px" onclick="testBD()">⚡ Test</button>
+        <button class="btn btn-outline" style="padding:8px 14px;font-size:13px;color:var(--acc);border-color:rgba(255,77,109,.4)" onclick="clearBD()">✕ Disable</button>
+        <span class="bd-test-result" id="bd-test-result"></span>
+      </div>
+
+      <div class="bd-info">
+        <b style="color:var(--acc2)">⚡ Vercel Setup:</b><br>
+        Vercel Dashboard → Your Project → <b>Settings → Environment Variables</b><br><br>
+        <code>BD_USER</code> = <code>brd-customer-[ID]-zone-[ZONE_NAME]</code><br>
+        <code>BD_PASS</code> = your zone password<br>
+        <code>BD_HOST</code> = <code>brd.superproxy.io</code> (optional)<br>
+        <code>BD_PORT</code> = <code>22225</code> (optional)<br><br>
+        Deploy ke baad Redeploy karo — credentials live ho jayenge.
+      </div>
+    </div>
+  </div>
+
+  <!-- Fallback Proxy Health -->
+  <div class="proxy-bar" id="proxy-bar-fallback">
+    <span class="proxy-label">Fallback Proxies</span>
+    <div class="proxy-dots" id="proxy-dots"></div>
+  </div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-head-bar">
+      <span class="tbl-title">41 Domains · 4 Fields Each · Strict Validation</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--dim)">sitemap-items · sitemap-cats · pdp1 · pdp2</span>
+    </div>
+    <div style="overflow-x:auto">
+    <table>
+      <colgroup>
+        <col class="c0"><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Domain</th>
+          <th>SiteMap XML — Items</th>
+          <th>SiteMap XML — Categories</th>
+          <th>PDP URL 1</th>
+          <th>PDP URL 2</th>
+          <th>Log</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════
+   CLIENT DATA  — exact from spreadsheet
+═══════════════════════════════════════════════ */
+const CLIENT = [
+  { d:'www.freepeople.com',    si:'https://www.freepeople.com/fpmovement/products_sitemap.xml', sc:'',  p1:'', p2:'' },
+  { d:'www.shopterrain.com',   si:'https://www.shopterrain.com/products_sitemap.xml', sc:'https://www.shopterrain.com/categories_sitemap.xml', p1:'https://www.shopterrain.com/shop/rainy-day-duck-felt-critter?color=072', p2:'https://www.shopterrain.com/shop/solar-pebble-light?color=010' },
+  { d:'www.anthropologie.com', si:'', sc:'', p1:'', p2:'' },
+  { d:'www.laroche-posay.us',  si:'', sc:'', p1:'', p2:'' },
+  { d:'www.lg.com',            si:'', sc:'', p1:'', p2:'' },
+  { d:'www.fragrancenet.com',  si:'', sc:'', p1:'', p2:'' },
+  { d:'www.paulaschoice.com',  si:'', sc:'', p1:'', p2:'' },
+  { d:'www.converse.com',      si:'', sc:'', p1:'', p2:'' },
+  { d:'thefivetenshoes.com',   si:'', sc:'', p1:'', p2:'' },
+  { d:'cooklist.com',          si:'', sc:'', p1:'', p2:'' },
+  { d:'rtfkt.com',             si:'', sc:'', p1:'', p2:'' },
+  { d:'www.dollargeneral.com', si:'', sc:'', p1:'', p2:'' },
+  { d:'www.clinique.com',      si:'', sc:'', p1:'', p2:'' },
+  { d:'www.bjs.com',           si:'', sc:'', p1:'', p2:'' },
+  { d:'www.ae.com',            si:'', sc:'', p1:'', p2:'' },
+  { d:'www.kiehls.com',        si:'', sc:'', p1:'', p2:'' },
+  { d:'www.theouai.com',       si:'', sc:'', p1:'', p2:'' },
+  { d:'electronics.sony.com',  si:'', sc:'', p1:'', p2:'' },
+  { d:'oldnavy.gap.com',       si:'', sc:'', p1:'', p2:'' },
+  { d:'www.supergoop.com',     si:'https://supergoop.com/sitemap_products_1.xml?from=112965845008&to=7497332162658', sc:'https://supergoop.com/sitemap_collections_1.xml?from=5691441168&to=291263873122', p1:'https://supergoop.com/products/city-sunscreen-serum?variant=731871641616', p2:'https://supergoop.com/products/play-lip-shield-spf-30' },
+  { d:'www.sallybeauty.com',    si:'', sc:'', p1:'', p2:'' },
+  { d:'www.naturemade.com',     si:'', sc:'', p1:'', p2:'' },
+  { d:'www.surlatable.com',     si:'', sc:'', p1:'', p2:'' },
+  { d:'www.garmin.com',         si:'', sc:'', p1:'', p2:'' },
+  { d:'www.dickblick.com',      si:'', sc:'', p1:'', p2:'' },
+  { d:'www.sears.com',          si:'', sc:'', p1:'', p2:'' },
+  { d:'shop.asus.com',          si:'', sc:'', p1:'', p2:'' },
+  { d:'www.oxo.com',            si:'', sc:'', p1:'', p2:'' },
+  { d:'naturium.com',           si:'', sc:'', p1:'', p2:'' },
+  { d:'shop.gnc.com',           si:'', sc:'', p1:'', p2:'' },
+  { d:'www.oreillyauto.com',    si:'', sc:'', p1:'', p2:'' },
+  { d:'www.dior.com',           si:'', sc:'', p1:'', p2:'' },
+  { d:'www.backmarket.com',     si:'', sc:'', p1:'', p2:'' },
+  { d:'www.asics.com',          si:'', sc:'', p1:'', p2:'' },
+  { d:'www.carparts.com',       si:'', sc:'', p1:'', p2:'' },
+  { d:'www.tatcha.com',         si:'', sc:'', p1:'', p2:'' },
+  { d:'www.dermalogica.com',    si:'', sc:'', p1:'', p2:'' },
+  { d:'www.famousfootwear.com', si:'', sc:'', p1:'', p2:'' },
+  { d:'www.underarmour.com',    si:'', sc:'', p1:'', p2:'' },
+  { d:'www.yesstyle.com',       si:'', sc:'', p1:'', p2:'' },
+  { d:'www.flooranddecor.com',  si:'', sc:'', p1:'', p2:'' },
+];
+
+/* ═══════════════════════════════════════════════
+   BRIGHT DATA — via Vercel Serverless API
+   /api/fetch  /api/test  /api/status
+═══════════════════════════════════════════════ */
+
+// Auto-detect: same origin on Vercel, localhost for dev
+const API_BASE = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
+  ? 'http://127.0.0.1:3737'   // local dev — node server.js
+  : '';                        // Vercel — same origin /api/...
+
+let BD = { enabled: false };
+let SERVER_ALIVE = false;
+
+function enc(u){ return encodeURIComponent(u); }
+
+async function checkServer(){
+  try{
+    const r = await fetch(`${API_BASE}/api/status`, {signal: AbortSignal.timeout ? AbortSignal.timeout(4000) : undefined});
+    if(!r.ok) throw new Error('not ok');
+    const j = await r.json();
+    SERVER_ALIVE = true;
+    const note = document.getElementById('server-check-note');
+    if(note){
+      if(j.configured){
+        note.style.cssText='background:rgba(0,229,160,.06);border-color:rgba(0,229,160,.2);color:var(--g)';
+        note.textContent=`✓ Bright Data configured! User: ${j.userHint} · Seedha RUN ALL dabao.`;
+        BD.enabled = true;
+        updateBDStatus('active','✓ ACTIVE · VERCEL','Bright Data ready via Vercel');
+      } else {
+        note.style.cssText='background:rgba(255,209,102,.06);border-color:rgba(255,209,102,.2);color:var(--acc2)';
+        note.innerHTML='⚠ Vercel pe deploy hai lekin BD credentials set nahi hain.<br>Vercel Dashboard → Settings → Environment Variables mein <b>BD_USER</b> aur <b>BD_PASS</b> daalo.';
+      }
+    }
+    return j.configured;
+  }catch(e){
+    SERVER_ALIVE = false;
+    const note = document.getElementById('server-check-note');
+    if(note){
+      note.style.cssText='background:rgba(255,77,109,.06);border-color:rgba(255,77,109,.2);color:var(--acc)';
+      note.innerHTML='✗ API unreachable. Vercel pe deploy karo ya local <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px">node server.js</code> chalao.';
+    }
+    return false;
+  }
+}
+
+function toggleBD(){
+  const body = document.getElementById('bd-body');
+  const lbl  = document.getElementById('bd-mode-label');
+  const open = body.classList.toggle('open');
+  lbl.textContent = open ? '▲ Close' : '▼ Click to see status';
+  if(open) checkServer();
+}
+
+// On Vercel, credentials are set via env vars — no need to POST from browser
+// This panel is just informational when deployed
+async function saveBD(){
+  const el = document.getElementById('bd-test-result');
+  el.className='bd-test-result try'; el.textContent='Checking…';
+  const ok = await checkServer();
+  if(ok){
+    el.className='bd-test-result ok'; el.textContent='✓ Vercel BD configured!';
+  } else {
+    el.className='bd-test-result err';
+    el.textContent='✗ BD_USER / BD_PASS Vercel env vars mein set karo';
+  }
+}
+
+async function testBD(){
+  const el = document.getElementById('bd-test-result');
+  el.className='bd-test-result try'; el.textContent='Testing Bright Data…';
+  try{
+    const r = await fetch(`${API_BASE}/api/test`, {signal: AbortSignal.timeout ? AbortSignal.timeout(22000) : undefined});
+    const j = await r.json();
+    if(j.ok){
+      BD.enabled = true; SERVER_ALIVE = true;
+      el.className='bd-test-result ok';
+      el.textContent=`✓ Connected! BD IP: ${j.ip}`;
+      updateBDStatus('active','✓ ACTIVE','BD live · IP: '+j.ip);
+    } else {
+      el.className='bd-test-result err';
+      el.textContent='✗ '+(j.error||'BD connection failed');
+    }
+  }catch(e){
+    el.className='bd-test-result err';
+    el.textContent='✗ API unreachable: '+e.message;
+  }
+}
+
+function clearBD(){ BD.enabled=false; updateBDStatus('','NOT CONFIGURED','▼ Click to see status'); }
+
+function updateBDStatus(pillCls, pillText, modeText){
+  const pill = document.getElementById('bd-pill');
+  pill.className='bd-status-pill'+(pillCls?' '+pillCls:'');
+  pill.textContent=pillText;
+  document.getElementById('bd-mode-label').textContent=modeText;
+}
+
+// ── Main fetch via Vercel /api/fetch ──
+async function fetchViaBrightData(targetURL, ms=25000){
+  if(!SERVER_ALIVE) return null;
+  try{
+    const r = await fetch(`${API_BASE}/api/fetch?url=${enc(targetURL)}`, {
+      signal: AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined,
+    });
+    if(!r.ok) return null;
+    const txt = await r.text();
+    if(!txt || txt.length < 60) return null;
+    try{ const j=JSON.parse(txt); if(j.ok===false) return null; }catch{}
+    return txt;
+  }catch(e){ return null; }
+}
+
+/* ═══════════════════════════════════════════════
+   FALLBACK PROXY POOL — used when BD is off or fails
+/* ═══════════════════════════════════════════════
+   FALLBACK PROXY POOL — used when BD is off or fails
+/* ═══════════════════════════════════════════════
+   FALLBACK PROXY POOL — used when BD is off or fails
+═══════════════════════════════════════════════ */
+const PROXY_POOL = [
+  { name:'allorigins',    fn: u=>`https://api.allorigins.win/raw?url=${enc(u)}` },
+  { name:'corsproxy.io',  fn: u=>`https://corsproxy.io/?${enc(u)}` },
+  { name:'codetabs',      fn: u=>`https://api.codetabs.com/v1/proxy?quest=${enc(u)}` },
+  { name:'thingproxy',    fn: u=>`https://thingproxy.freeboard.io/fetch/${u}` },
+  { name:'corssh',        fn: u=>`https://cors.sh/${u}` },
+  { name:'allorigins2',   fn: u=>`https://api.allorigins.win/get?url=${enc(u)}`, parse: r=>{ try{ return JSON.parse(r).contents; }catch{ return r; } } },
+  { name:'whateverorigin',fn: u=>`https://www.whateverorigin.org/get?url=${enc(u)}`, parse: r=>{ try{ return JSON.parse(r).contents; }catch{ return r; } } },
+  { name:'htmldriven',    fn: u=>`https://cors-anywhere.htmldriven.com/${u}` },
+  { name:'corsbridge',    fn: u=>`https://cors.bridged.cc/${u}` },
+  { name:'proxysh',       fn: u=>`https://proxy.cors.sh/${u}` },
+];
+
+const proxyHealth = {};
+PROXY_POOL.forEach(p => proxyHealth[p.name] = null);
+
+function renderProxyDots(){
+  const el = document.getElementById('proxy-dots');
+  if(!el) return;
+  el.innerHTML = PROXY_POOL.map(p=>{
+    const h = proxyHealth[p.name];
+    const cls = h===true?'ok':h===false?'fail':'';
+    return `<span class="px-dot ${cls}" title="${p.name}"></span><span class="px-name">${p.name}</span>`;
+  }).join('');
+}
+renderProxyDots();
+
+/* ═══════════════════════════════════════════════
+   SMART FETCH — BD first, then fallback proxies
+═══════════════════════════════════════════════ */
+async function fetchURL(url, ms=14000){
+  // ── 1. Try Bright Data first if configured ──
+  if(BD.enabled){
+    const bdResult = await fetchViaBrightData(url, ms);
+    if(bdResult) return bdResult;
+    // BD failed for this URL, fall through to free proxies
+  }
+
+  // ── 2. Free proxy fallback ──
+  const ordered = [
+    ...PROXY_POOL.filter(p=>proxyHealth[p.name]===true),
+    ...PROXY_POOL.filter(p=>proxyHealth[p.name]===null),
+    ...PROXY_POOL.filter(p=>proxyHealth[p.name]===false),
+  ];
+
+  return new Promise(resolve=>{
+    let done=false, tried=0;
+    const fin=(txt, proxyName)=>{
+      if(done) return;
+      done=true;
+      if(proxyName) proxyHealth[proxyName]=true;
+      renderProxyDots();
+      resolve(txt);
+    };
+    const fail=()=>{ if(++tried===ordered.length&&!done){ done=true; resolve(null); } };
+    setTimeout(()=>{ if(!done){ done=true; resolve(null); } }, ms);
+    ordered.forEach(px=>{
+      fetch(px.fn(url))
+        .then(r=>r.ok?r.text():Promise.reject())
+        .then(raw=>{
+          const txt = px.parse ? px.parse(raw) : raw;
+          if(!txt||txt.length<60) throw 0;
+          if(!/(<|https?:\/\/)/i.test(txt)) throw 0;
+          fin(txt, px.name);
+        })
+        .catch(()=>{ proxyHealth[px.name]=false; renderProxyDots(); fail(); });
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   GOOGLE CACHE FETCH — fallback for HTML pages
+═══════════════════════════════════════════════ */
+async function fetchGoogleCache(url, ms=10000){
+  const cacheURL = `https://webcache.googleusercontent.com/search?q=cache:${enc(url)}`;
+  return fetchURL(cacheURL, ms);
+}
+
+/* ═══════════════════════════════════════════════
+   PDP RULES — strict, no false positives
+═══════════════════════════════════════════════ */
+const BAD = new Set(['cart','checkout','login','signin','sign-in','register','signup','account','my-account','profile','orders','order','wishlist','compare','search','blog','blogs','news','post','posts','article','articles','about','contact','faq','help','support','policy','policies','privacy','terms','sitemap','stores','store-locator','store-finder','track','tracking','gift-card','gift-cards','loyalty','rewards','refer','affiliate','press','careers','jobs','investors','sustainability','accessibility','pages','sections','collection','collections','category','categories','department','departments','brand','brands','ext','api','cdn-cgi','static','assets','media','images','fonts','tag','tags','event','events','engage','user','points','referral','redeem','size-guide','size-chart','home','homepage']);
+const BAD_EXT = /\.(jpg|jpeg|png|gif|svg|webp|pdf|zip|css|js|xml|txt|ico|woff|woff2|mp4|mp3|json)(\?|#|$)/i;
+
+const PDP_RULES = [
+  p=>/\/(products?)\//i.test(p.pathname) && p.pathname.split('/').filter(Boolean).length>=2,
+  p=>/\/items?\//i.test(p.pathname) && p.pathname.split('/').filter(Boolean).length>=2,
+  p=>/\/dp\/[A-Z0-9]{5,}/i.test(p.pathname),
+  p=>/\/pd\/[^\/\s?#]{4,}/i.test(p.pathname),
+  p=>/\/detail\/[^\/\s?#]{4,}/i.test(p.pathname),
+  p=>/\/sku\/[^\/\s?#]{4,}/i.test(p.pathname),
+  p=>/\/collections\/[^\/]+\/products\/[^\/\s?#]{3,}/i.test(p.pathname),
+  p=>/\-(\d{6,})(\.html?)?(\?|#|$)/.test(p.pathname)||/\/(\d{7,})(\.html?)?(\?|#|$)/.test(p.pathname),
+  p=>/[?&](productId|product_id|pid|itemId|skuId|modelNo|partNumber)=[^&\s#]{2,}/i.test(p.search),
+  p=>{const s=p.pathname.split('/').filter(Boolean);return s.length>=2&&/^[a-z0-9][a-z0-9\-_]{7,}\.html?$/i.test(s[s.length-1]);},
+  p=>/\/store\/product\//i.test(p.pathname),
+  p=>{const m=p.pathname.match(/\/p\/([^\/\s?#]+)/i);return !!(m&&m[1].length>=5);},
+  p=>{const s=p.pathname.split('/').filter(Boolean);return s[0]==='shop'&&s.length>=2&&(s[1]||'').length>=5&&!BAD.has((s[1]||'').toLowerCase());},
+  p=>{const last=(p.pathname.split('/').filter(Boolean).pop()||'');return last.length>=12&&/\-v\-[a-z0-9]/i.test(last);},
+  p=>/\/[a-z]{2}[_\-][A-Z]{2}\/.*\/[^\/\s?#]{5,}$/.test(p.pathname)&&p.pathname.split('/').filter(Boolean).length>=4,
+];
+
+/* ── NON-US locale segments to reject ──
+   If URL path has a non-US country/language prefix, skip it.
+   US-valid prefixes: /us/, /en-us/, /en_us/, /en/ (only if no other country),
+   or no locale prefix at all. */
+const NON_US_LOCALES = new Set([
+  'gb','uk','en-gb','en_gb',
+  'ca','en-ca','en_ca','fr-ca','fr_ca',
+  'au','en-au','en_au',
+  'de','fr','es','it','nl','pt','pl','ru','ja','ko','zh','ar','tr','sv','da','fi','no','nb',
+  'eu','eu-es','fr-fr','de-de','es-es','it-it','nl-nl','pt-pt','pt-br','es-mx','es-ar',
+  'en-ie','en-in','en-sg','en-nz','en-za','en-hk','en-my','en-ph',
+  'in','mx','br','jp','kr','cn','hk','sg','nz','za','ie','sa','ae','row','global','int','ww',
+]);
+
+function isUSUrl(url){
+  let p; try{p=new URL(url);}catch{return true;} // if can't parse, don't reject
+  const segs = p.pathname.split('/').filter(Boolean);
+  if(segs.length === 0) return true;
+  const first = segs[0].toLowerCase();
+  // If first segment looks like a locale code, check it
+  if(/^[a-z]{2}(-[a-z]{2})?$/.test(first) || /^[a-z]{2}_[a-z]{2}$/.test(first)){
+    // Explicitly US locales are fine
+    if(['us','en-us','en_us','en'].includes(first)) return true;
+    // Known non-US → reject
+    if(NON_US_LOCALES.has(first)) return false;
+  }
+  // Also check hostname — e.g. de.site.com, fr.site.com
+  const hostParts = p.hostname.split('.');
+  if(hostParts.length >= 3){
+    const sub = hostParts[0].toLowerCase();
+    if(NON_US_LOCALES.has(sub)) return false;
+    if(sub==='us'||sub==='en') return true;
+  }
+  return true; // no locale prefix = treat as US/global
+}
+
+function isPDP(url, bare){
+  if(!url||typeof url!=='string') return false;
+  if(!url.startsWith('http')) return false;
+  let p; try{p=new URL(url);}catch{return false;}
+  if(bare && !p.hostname.toLowerCase().includes(bare)) return false;
+  if(BAD_EXT.test(url)) return false;
+  const segs=p.pathname.split('/').filter(Boolean);
+  if(segs.length<1) return false;
+  if(segs.some(s=>BAD.has(s.toLowerCase()))) return false;
+  if(segs.length<2) return false;
+  // US-only filter
+  if(!isUSUrl(url)) return false;
+  return PDP_RULES.some(fn=>{try{return fn(p);}catch{return false;}});
+}
+
+/* Same US check for sitemap URLs */
+function isUSSitemap(url){
+  if(!url) return false;
+  let p; try{p=new URL(url);}catch{return false;}
+  // Check hostname subdomain
+  const hostParts=p.hostname.split('.');
+  if(hostParts.length>=3){
+    const sub=hostParts[0].toLowerCase();
+    if(NON_US_LOCALES.has(sub)) return false;
+  }
+  // Check path prefix
+  const segs=p.pathname.split('/').filter(Boolean);
+  if(segs.length>0){
+    const first=segs[0].toLowerCase();
+    if(NON_US_LOCALES.has(first)) return false;
+  }
+  return true;
+}
+
+function ab(href,base){
+  if(!href) return null;
+  href=href.trim();
+  try{
+    if(href.startsWith('http')) return href;
+    if(href.startsWith('//')) return 'https:'+href;
+    if(href.startsWith('/')) return new URL(href,base).href;
+    return null; // skip relative paths without leading slash — unreliable
+  }catch{return null;}
+}
+
+/* ═══════════════════════════════════════════════
+   SITEMAP HELPERS
+═══════════════════════════════════════════════ */
+function locsFromXML(txt){
+  if(!txt) return [];
+  return [...txt.matchAll(/<loc>\s*(.*?)\s*<\/loc>/gis)]
+    .map(m=>m[1].trim().replace(/&amp;/g,'&'))
+    .filter(l=>l.startsWith('http'));
+}
+
+function classifySitemap(url){
+  const u=url.toLowerCase();
+  if(/product|item|goods|catalog|pdp|_p_/i.test(u)) return 'items';
+  if(/categor|collection|department|nav|menu|taxon/i.test(u)) return 'cats';
+  return 'other';
+}
+
+function isSitemapLive(txt){
+  return txt && (/<urlset|<sitemapindex|<loc>/i.test(txt)) && txt.length > 100;
+}
+
+/* ═══════════════════════════════════════════════
+   KNOWN SITEMAP PATTERNS — site-specific guesses
+   These are common platform patterns used by known e-comm platforms
+═══════════════════════════════════════════════ */
+function getSiteSpecificPaths(bare){
+  // Shopify
+  const shopify = [
+    '/sitemap_products_1.xml','/sitemap_collections_1.xml',
+    '/sitemap_products_2.xml',
+  ];
+  // Salesforce / SFCC
+  const sfcc = [
+    '/on/demandware.static/-/Sites/default/dw*/xmlfeeds/sitemap_index.xml',
+  ];
+  // Magento
+  const magento = [
+    '/pub/sitemaps/sitemap.xml','/pub/media/sitemap.xml',
+  ];
+  // General patterns
+  const general = [
+    '/sitemap.xml','/sitemap_index.xml','/sitemap-index.xml',
+    '/sitemap-products.xml','/sitemap_products.xml',
+    '/sitemap-product.xml','/sitemap_product.xml',
+    '/product-sitemap.xml','/products-sitemap.xml',
+    '/sitemap/products.xml','/sitemaps/products.xml',
+    '/sitemap-categories.xml','/sitemap_categories.xml',
+    '/category-sitemap.xml','/categories-sitemap.xml',
+    '/sitemap-collections.xml','/sitemap_collections.xml',
+    '/sitemap-1.xml','/sitemap-2.xml','/sitemap-3.xml',
+    '/sitemaps/sitemap.xml','/sitemaps/sitemap-index.xml',
+    '/sitemap/sitemap.xml',
+    // Numbered variants
+    '/sitemap_products_1.xml','/sitemap_products_2.xml',
+    '/sitemap_collections_1.xml',
+    // Static paths
+    '/StaticFiles/sitemap.xml',
+  ];
+  return [...new Set([...general,...shopify,...magento])];
+}
+
+/* ═══════════════════════════════════════════════
+   EXTRACT PDPs FROM HTML
+═══════════════════════════════════════════════ */
+const DP = new DOMParser();
+
+function extractPDPs(html, base, bare){
+  if(!html) return [];
+  const found = new Set();
+  let doc;
+  try{ doc=DP.parseFromString(html,'text/html'); }catch{ return []; }
+
+  // <a href>
+  doc.querySelectorAll('a[href]').forEach(a=>{
+    const u=ab(a.getAttribute('href'),base);
+    if(u&&isPDP(u,bare)) found.add(u);
+  });
+
+  // LD+JSON
+  doc.querySelectorAll('script[type="application/ld+json"]').forEach(el=>{
+    try{
+      const data=JSON.parse(el.textContent);
+      digLD(data,found,base,bare);
+    }catch{}
+  });
+
+  // Inline JS — extract quoted URLs
+  doc.querySelectorAll('script:not([src])').forEach(el=>{
+    const t=el.textContent;
+    if(!t||t.length<50||t.length>800000) return;
+    for(const m of t.matchAll(/"(https?:\/\/[^"<>\s]{15,280})"/g))
+      if(isPDP(m[1],bare)) found.add(m[1]);
+    for(const m of t.matchAll(/"(\/[a-zA-Z0-9%_\-/.?=]{6,200})"/g)){
+      const u=ab(m[1],base);
+      if(u&&isPDP(u,bare)) found.add(u);
+    }
+  });
+
+  return [...found];
+}
+
+function digLD(d,s,base,bare){
+  if(!d) return;
+  if(Array.isArray(d)){ d.forEach(x=>digLD(x,s,base,bare)); return; }
+  if(d['@type']==='Product'){
+    const u=ab(d.url,base); if(u&&isPDP(u,bare)) s.add(u);
+    [d.offers].flat().filter(Boolean).forEach(o=>{ const u2=ab(o&&o.url,base); if(u2&&isPDP(u2,bare)) s.add(u2); });
+  }
+  if(d['@type']==='ItemList'&&d.itemListElement){
+    [d.itemListElement].flat().forEach(i=>{
+      const u=ab(i&&i.url,base);if(u&&isPDP(u,bare))s.add(u);
+      const u2=ab(i&&i.item&&i.item.url,base);if(u2&&isPDP(u2,bare))s.add(u2);
+    });
+  }
+  if(d['@graph']) digLD(d['@graph'],s,base,bare);
+  if(d.mainEntity) digLD(d.mainEntity,s,base,bare);
+}
+
+/* ═══════════════════════════════════════════════
+   MAIN PROCESS — single domain
+═══════════════════════════════════════════════ */
+async function processDomain(row){
+  row.status='running'; row.log='Starting…'; row.logT='i';
+  updateRow(row);
+
+  const bare = row.d.replace(/^www\./,'').split('/')[0];
+  const wwwBase  = 'https://www.'+bare;
+  const bareBase = 'https://'+bare;
+  const bases    = [wwwBase, bareBase];
+
+  // Already fully populated from client data?
+  if(row.si&&row.sc&&row.p1&&row.p2){
+    row.log='✓ All from client data'; row.logT='s';
+    row.status='done'; updateRow(row); return;
+  }
+
+  let smItems  = row.si || '';
+  let smCats   = row.sc || '';
+  let pdp1     = row.p1 || '';
+  let pdp2     = row.p2 || '';
+
+  const log=(msg,t='i')=>{ row.log=msg; row.logT=t; updateRow(row); };
+
+  /* ── PHASE 1: robots.txt ── */
+  log('robots.txt…');
+  let robotsSMs = [];
+  for(const b of bases){
+    const txt = await fetchURL(b+'/robots.txt', 7000);
+    if(txt){
+      for(const m of txt.matchAll(/Sitemap:\s*(https?:\/\/[^\s\r\n]+)/gi))
+        robotsSMs.push(m[1].trim());
+      break;
+    }
+  }
+  robotsSMs = [...new Set(robotsSMs)];
+
+  /* ── PHASE 2: Sitemap index → classify sub-sitemaps ── */
+  const paths = getSiteSpecificPaths(bare);
+  const indexCands = [...new Set([...robotsSMs, ...bases.flatMap(b=>paths.map(p=>b+p))])];
+
+  log(`Checking ${indexCands.length} sitemap paths…`);
+
+  // Fetch in batches of 6 to avoid overwhelming
+  const BATCH=6;
+  let subSMs = [...robotsSMs]; // sub-sitemap URLs found in index
+
+  for(let i=0;i<indexCands.length;i+=BATCH){
+    const batch = indexCands.slice(i,i+BATCH);
+    const results = await Promise.allSettled(batch.map(u=>fetchURL(u,9000)));
+
+    for(let j=0;j<results.length;j++){
+      const r=results[j]; if(r.status!=='fulfilled'||!r.value) continue;
+      const txt=r.value; if(!isSitemapLive(txt)) continue;
+      const url=batch[j];
+
+      if(/<sitemapindex/i.test(txt)){
+        // Only keep US-relevant sub-sitemaps
+        locsFromXML(txt).filter(isUSSitemap).forEach(l=>subSMs.push(l));
+        continue;
+      }
+
+      // It's a leaf sitemap — skip if non-US sitemap
+      if(!isUSSitemap(url)) continue;
+
+      const locs  = locsFromXML(txt);
+      const pdps  = locs.filter(u=>isPDP(u,bare));
+      const cls   = classifySitemap(url);
+
+      if(cls==='items' && !smItems && pdps.length>=1){ smItems=url; log(`SM-Items: ✓ (${pdps.length} US PDPs)`,'s'); }
+      if(cls==='cats'  && !smCats  && locs.length>=1){ smCats=url;  log(`SM-Cats: ✓`,'s'); }
+      if(cls==='other' && !smItems && pdps.length>=3){ smItems=url; log(`SM-Items(auto): ✓ (${pdps.length} US PDPs)`,'s'); }
+
+      if(!pdp1&&pdps[0]) pdp1=pdps[0];
+      if(!pdp2&&pdps[1]) pdp2=pdps[1];
+
+      if(smItems&&smCats&&pdp1&&pdp2) break;
+    }
+    if(smItems&&smCats&&pdp1&&pdp2) break;
+  }
+
+  /* ── PHASE 3: Fetch sub-sitemaps from index ── */
+  subSMs = [...new Set(subSMs)];
+  if(subSMs.length && (!smItems||!smCats||!pdp1||!pdp2)){
+    log(`Checking ${Math.min(subSMs.length,20)} sub-sitemaps…`);
+    for(let i=0;i<subSMs.length;i+=BATCH){
+      if(smItems&&smCats&&pdp1&&pdp2) break;
+      const batch = subSMs.slice(i,i+BATCH);
+      const results = await Promise.allSettled(batch.map(u=>fetchURL(u,9000)));
+      for(let j=0;j<results.length;j++){
+        if(smItems&&smCats&&pdp1&&pdp2) break;
+        const r=results[j]; if(r.status!=='fulfilled'||!r.value) continue;
+        const txt=r.value; if(!isSitemapLive(txt)) continue;
+        const url=batch[j];
+        if(!isUSSitemap(url)) continue; // skip non-US sitemaps
+        if(/<sitemapindex/i.test(txt)){ locsFromXML(txt).filter(isUSSitemap).forEach(l=>subSMs.push(l)); continue; }
+
+        const locs = locsFromXML(txt);
+        const pdps = locs.filter(u=>isPDP(u,bare));
+        const cls  = classifySitemap(url);
+
+        if(!smItems && pdps.length>=1 && (cls==='items'||cls==='other')){ smItems=url; log(`SM-Items: ✓ (US)`,'s'); }
+        if(!smCats  && locs.length>=1 && cls==='cats'){ smCats=url; log(`SM-Cats: ✓ (US)`,'s'); }
+        if(!smCats  && locs.length>=1 && !smItems && cls==='other'){ smCats=url; }
+
+        if(!pdp1&&pdps[0]) pdp1=pdps[0];
+        if(!pdp2&&pdps[1]) pdp2=pdps[1];
+      }
+    }
+  }
+
+  /* ── PHASE 4: Get PDPs from best sitemap if still needed ── */
+  if((!pdp1||!pdp2) && smItems){
+    const txt = await fetchURL(smItems, 10000);
+    if(txt){
+      const pdps = locsFromXML(txt).filter(u=>isPDP(u,bare));
+      if(!pdp1&&pdps[0]) pdp1=pdps[0];
+      if(!pdp2&&pdps[1]) pdp2=pdps[1];
+    }
+  }
+
+  /* ── PHASE 5: Crawl homepage if PDPs still missing ── */
+  if(!pdp1||!pdp2){
+    log('Crawling homepage…');
+    let homeHTML=null, homeBase=wwwBase;
+    for(const b of bases){
+      homeHTML=await fetchURL(b,10000);
+      if(!homeHTML) homeHTML=await fetchGoogleCache(b,10000);
+      if(homeHTML){ homeBase=b; break; }
+    }
+    if(homeHTML){
+      const hits=extractPDPs(homeHTML,homeBase,bare);
+      if(!pdp1&&hits[0]) pdp1=hits[0];
+      if(!pdp2&&hits[1]) pdp2=hits[1];
+    }
+  }
+
+  /* ── PHASE 6: Crawl a category/listing page ── */
+  if(!pdp1||!pdp2){
+    log('Crawling category pages…');
+    // Try common category/listing paths
+    const catPaths=['/shop','/products','/collections','/catalog','/all','/store','/c'];
+    for(const b of bases){
+      if(pdp1&&pdp2) break;
+      for(const cp of catPaths){
+        if(pdp1&&pdp2) break;
+        const html=await fetchURL(b+cp,8000);
+        if(!html) continue;
+        const hits=extractPDPs(html,b,bare);
+        if(!pdp1&&hits[0]) pdp1=hits[0];
+        if(!pdp2&&hits[1]) pdp2=hits[1];
+      }
+    }
+  }
+
+  /* ── PHASE 7: Google cache for category page ── */
+  if(!pdp1||!pdp2){
+    log('Trying Google cache…');
+    const cacheTries=[wwwBase+'/products',wwwBase+'/shop',wwwBase,wwwBase+'/collections/all'];
+    for(const u of cacheTries){
+      if(pdp1&&pdp2) break;
+      const html=await fetchGoogleCache(u,10000);
+      if(!html) continue;
+      const hits=extractPDPs(html,wwwBase,bare);
+      if(!pdp1&&hits[0]) pdp1=hits[0];
+      if(!pdp2&&hits[1]) pdp2=hits[1];
+    }
+  }
+
+  /* ── STRICT VALIDATION — never store unconfirmed data ── */
+  if(smItems && !smItems.startsWith('http')) smItems='';
+  if(smCats  && !smCats.startsWith('http'))  smCats='';
+  if(pdp1    && !isPDP(pdp1,bare))  pdp1='';
+  if(pdp2    && !isPDP(pdp2,bare))  pdp2='';
+  if(pdp1===pdp2 && pdp1) pdp2=''; // no duplicates
+
+  // Validate sitemaps are actually reachable
+  // (we already fetched them, so if they have content they're valid)
+
+  row.si=smItems; row.sc=smCats; row.p1=pdp1; row.p2=pdp2;
+
+  const n=(smItems?1:0)+(smCats?1:0)+(pdp1?1:0)+(pdp2?1:0);
+  if(n===4){      row.status='done';    row.log='✓ All 4 fields found'; row.logT='s'; }
+  else if(n>0){   row.status='partial'; row.log=`⚠ ${n}/4 fields found`; row.logT='w'; }
+  else{           row.status='error';   row.log='✗ Blocked / no public sitemap'; row.logT='e'; }
+
+  updateRow(row);
+  updateChips();
+  updateHeader();
+}
+
+/* ═══════════════════════════════════════════════
+   STATE + INIT
+═══════════════════════════════════════════════ */
+const ROWS = CLIENT.map((c,i)=>({id:i, d:c.d, si:c.si, sc:c.sc, p1:c.p1, p2:c.p2, status:'pending', log:'', logT:'i'}));
+let IS_RUNNING=false;
+
+/* ═══════════════════════════════════════════════
+   TABLE RENDER
+═══════════════════════════════════════════════ */
+function urlDiv(url,running){
+  if(running&&!url) return `<div class="url-cell"><span class="finding finding-anim">searching</span></div>`;
+  if(!url) return `<div class="url-cell"><span class="none">—</span></div>`;
+  const disp=url.length>60?url.slice(0,60)+'…':url;
+  return `<div class="url-cell"><a href="${url}" target="_blank" rel="noopener" title="${url}">${disp}</a></div>`;
+}
+
+const ST={
+  pending:['st-p','PENDING'],
+  running:['st-r','RUNNING'],
+  done:   ['st-d','DONE'],
+  partial:['st-w','PARTIAL'],
+  error:  ['st-e','FAILED'],
+};
+
+const LC={i:'',s:'ls',w:'lw',e:'le'};
+
+function rowHTML(r,i){
+  const run=r.status==='running';
+  const [sc,sl]=ST[r.status]||ST.pending;
+  return `
+    <td><div class="cell" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--m)">${String(i+1).padStart(2,'0')}</div></td>
+    <td><div class="cell cell-domain">${r.d}${run?'<div class="dsub" style="color:var(--g2)">processing…</div>':''}</div></td>
+    <td><div class="cell">${urlDiv(r.si,run)}</div></td>
+    <td><div class="cell">${urlDiv(r.sc,run)}</div></td>
+    <td><div class="cell">${urlDiv(r.p1,run)}</div></td>
+    <td><div class="cell">${urlDiv(r.p2,run)}</div></td>
+    <td><div class="cell log-cell"><span class="${LC[r.logT]||''}">${r.log}</span></div></td>
+    <td><div class="cell"><span class="st ${sc}">${sl}</span></div></td>
+  `;
+}
+
+function renderTable(){
+  const tb=document.getElementById('tbody');
+  tb.innerHTML='';
+  ROWS.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    tr.id='r'+r.id;
+    tr.innerHTML=rowHTML(r,i);
+    tb.appendChild(tr);
+  });
+}
+
+function updateRow(r){
+  const tr=document.getElementById('r'+r.id);
+  if(!tr) return;
+  const i=ROWS.indexOf(r);
+  tr.innerHTML=rowHTML(r,i);
+}
+
+function updateChips(){
+  document.getElementById('c-done').textContent=ROWS.filter(r=>r.status==='done').length;
+  document.getElementById('c-part').textContent=ROWS.filter(r=>r.status==='partial').length;
+  document.getElementById('c-run').textContent=ROWS.filter(r=>r.status==='running').length;
+  document.getElementById('c-err').textContent=ROWS.filter(r=>r.status==='error').length;
+}
+
+function updateHeader(){
+  const done=ROWS.filter(r=>r.status==='done'||r.status==='partial'||r.status==='error').length;
+  const pdps=ROWS.reduce((a,r)=>a+(r.p1?1:0)+(r.p2?1:0),0);
+  const sms=ROWS.reduce((a,r)=>a+(r.si?1:0)+(r.sc?1:0),0);
+  document.getElementById('hdr-done').textContent=done;
+  document.getElementById('hdr-total').textContent=ROWS.length;
+  document.getElementById('hdr-pdps').textContent=pdps;
+  document.getElementById('hdr-sms').textContent=sms;
+}
+
+/* ═══════════════════════════════════════════════
+   RUN
+═══════════════════════════════════════════════ */
+async function runAll(){
+  if(IS_RUNNING) return;
+  IS_RUNNING=true;
+  const btn=document.getElementById('btn-run');
+  btn.disabled=true;
+  btn.innerHTML='<span class="sp"></span>RUNNING…';
+
+  const queue=ROWS.filter(r=>r.status==='pending'||r.status==='partial');
+  let idx=0;
+  const CONC=3;
+
+  async function worker(){
+    while(idx<queue.length){
+      const r=queue[idx++];
+      await processDomain(r);
+    }
+  }
+  await Promise.all(Array.from({length:Math.min(CONC,queue.length)},worker));
+
+  IS_RUNNING=false;
+  btn.disabled=false;
+  btn.textContent='⚡ RE-RUN ALL';
+  document.getElementById('btn-retry').disabled=ROWS.filter(r=>r.status==='error').length===0;
+  document.getElementById('btn-dl').disabled=false;
+  updateChips();
+  updateHeader();
+}
+
+async function retryFailed(){
+  ROWS.filter(r=>r.status==='error').forEach(r=>{ r.status='pending'; r.log=''; updateRow(r); });
+  document.getElementById('btn-retry').disabled=true;
+  await runAll();
+}
+
+/* ═══════════════════════════════════════════════
+   EXCEL
+═══════════════════════════════════════════════ */
+function dlExcel(){
+  const wb=XLSX.utils.book_new();
+  const data=ROWS.map((r,i)=>({
+    '#':i+1,
+    'Domain':r.d,
+    'SiteMap XML URL - Items':r.si||'',
+    'SiteMap XML URL - Categories':r.sc||'',
+    'PDP URL1':r.p1||'',
+    'PDP URL2':r.p2||'',
+    'Status':r.status,
+  }));
+  const ws=XLSX.utils.json_to_sheet(data);
+  ws['!cols']=[{wch:4},{wch:28},{wch:85},{wch:85},{wch:95},{wch:95},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,'PDP Data');
+  XLSX.writeFile(wb,`client_pdp_data_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+/* ── INIT ── */
+renderTable(); updateHeader(); updateChips();
+// Auto-check if server is running on load
+checkServer();
+</script>
+</body>
+</html>

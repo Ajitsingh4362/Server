@@ -1,0 +1,8 @@
+{
+  "name": "pdp-finder",
+  "version": "1.0.0",
+  "description": "PDP URL Finder with Bright Data proxy",
+  "engines": {
+    "node": "18.x"
+  }
+}

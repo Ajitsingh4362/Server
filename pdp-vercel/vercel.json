@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "functions": {
+    "api/fetch.js": { "maxDuration": 30 },
+    "api/test.js":  { "maxDuration": 15 },
+    "api/config.js":{ "maxDuration": 5  }
+  },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)",     "dest": "/public/$1" }
+  ]
+}
